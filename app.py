@@ -52,3 +52,7 @@ if pdf_file:
         st.download_button("Download Results as CSV", csv_data, "matched_ar_results.csv", "text/csv")
     else:
         st.warning("❌ No ARs matched in this bank statement.")
+
+git add app.py
+git commit -m "Fix column name KeyError"
+git push origin main

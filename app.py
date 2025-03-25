@@ -3,16 +3,14 @@ import pandas as pd
 import pdfplumber
 from rapidfuzz import fuzz
 
-# Cached function to load AR database
 @st.cache_data
-def load_ar_database():
+def app.py:
     return pd.read_excel("AR_DATABASE_DETAILS.xlsx")
 
-ar_df = load_ar_database()
+ar_df = app.py
 
 ar_names = ar_df["AR Name"].dropna().tolist()
 
-# Upload bank statement PDF
 pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
 
 def extract_pdf_lines(uploaded_pdf):

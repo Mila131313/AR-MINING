@@ -4,8 +4,8 @@ import pandas as pd
 import pdfplumber
 from rapidfuzz import fuzz
 
-st.set_page_config(page_title="AR Finder from Bank Statements")
-st.title("🔍 AR Detection from Bank Statements (PDF only)")
+ar_df = pd.read_excel("AR_DATABASE_DETAILS.xlsx")
+ar_names = ar_df["Actual Column Name"].dropna().tolist(
 
 # Load AR database directly from local file (included in repo)
 @st.cache_data
@@ -52,7 +52,3 @@ if pdf_file:
         st.download_button("Download Results as CSV", csv_data, "matched_ar_results.csv", "text/csv")
     else:
         st.warning("❌ No ARs matched in this bank statement.")
-
-git add app.py
-git commit -m "Fix column name KeyError"
-git push origin main

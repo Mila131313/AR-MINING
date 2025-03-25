@@ -13,7 +13,7 @@ def load_ar_database():
     return pd.read_excel("AR DATABASE DETAILS.xlsx")
 
 ar_df = load_ar_database()
-ar_names = ar_df["AR Name"].dropna().tolist()
+ar_names = ar_df["Exact Column Name from Excel"].dropna().tolist()
 
 # Upload bank statement PDF
 pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])

@@ -7,44 +7,57 @@ from rapidfuzz import fuzz
 def load_ar_database():
     return pd.read_excel("AR_DATABASE_DETAILS.xlsx", engine='openpyxl')
 
-def extract_transactions(uploaded_pdf):
-    transactions = []
+def extract_pdf_lines(uploaded_pdf):
+    lines = []
     with pdfplumber.open(uploaded_pdf) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
             if text:
-                transactions.extend(text.split("\n"))
-    return transactions
+                lines.extend(text.split("\n"))
+    return lines
 
+# Load AR database
 ar_df = load_ar_database()
 
-pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
+# Display exact columns to verify correct names:
+st.write("Excel Column Names:", ar_df.columns.tolist())
 
-if pdf_file:
-    st.info("⏳ Processing PDF...")
-    transactions = extract_transactions(pdf_file)
+# Corrected Column names exactly as per your Excel file
+ar_name_col = "AR NAME"
+ar_email_col = "AR EMAILS"
+ar_country_col = "country"
+ar_state_col = "STATE"
 
-    results = []
+if ar_name_col not in ar_df.columns or ar_email_col not in ar_df.columns:
+    st.error("⚠️ Column names in your Excel file do not match. Check the names above and update them in the code.")
+else:
+    ar_names = ar_df[ar_name_col].dropna().tolist()
 
-    for _, ar_row in ar_df.iterrows():
-        matched_transactions = []
+    # PDF upload section
+    pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
+
+    if pdf_file:
+        st.info("⏳ Processing PDF...")
+        transactions = extract_pdf_lines(pdf_file)
+
+        results = []
         for line in transactions:
-            if fuzz.partial_ratio(ar_row["AR NAME"].lower(), line.lower()) >= 85:
-                matched_transactions.append(line.strip())
+            for ar in ar_names:
+                score = fuzz.partial_ratio(ar.lower(), line.lower())
+                if score >= 85:
+                    match_email = ar_df[ar_df[ar_name_col] == ar][ar_email_col].values[0]
+                    results.append({
+                        "Transaction": line.strip(),
+                        "Matched AR": ar,
+                        "Email": match_email
+                    })
 
-        results.append({
-            "Section": "Deposits and Other Credits",
-            "AR Description": ar_row.get("AR Description", "N/A"),
-            "AR Frequency": ar_row.get("AR Frequency", "N/A"),
-            "AR Matching": "Yes" if matched_transactions else "No",
-            "Itemized AR Breakdown": "\n".join(f"• {item}" for item in matched_transactions) if matched_transactions else "-",
-            "AR Materiality": ar_row.get("AR Materiality", "N/A"),
-            "AR Entity Details": f"Name: {ar_row.get('Name', 'N/A')}, Location: {ar_row.get('Location', 'N/A')}, Industry: {ar_row.get('Industry', 'N/A')}, Website: {ar_row.get('Website', 'N/A')}"
-        })
+        if results:
+            result_df = pd.DataFrame(results)
+            st.success(f"✅ {len(result_df)} matches found!")
+            st.dataframe(result_df)
 
-    result_df = pd.DataFrame(results)
-    st.success(f"✅ Report generated with {len(result_df)} AR records!")
-    st.dataframe(result_df)
-
-    csv_data = result_df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download Organized Report as CSV", csv_data, "organized_ar_report.csv", "text/csv")
+            csv_data = result_df.to_csv(index=False).encode("utf-8")
+            st.download_button("Download Results as CSV", csv_data, "matched_ar_results.csv", "text/csv")
+        else:
+            st.warning("❌ No ARs matched in this bank statement.")

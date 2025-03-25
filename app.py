@@ -23,8 +23,10 @@ ar_df = load_ar_database()
 st.write("Excel Column Names:", ar_df.columns.tolist())
 
 # Ensure these exactly match your Excel columns!
-ar_name_col = "AR NAME"
-email_col = "AR EMAIL"
+ar_name_col = "AR Name"
+ar_email_col = "AR Email"
+ar_country_col = "AR Country"
+ar_state_col = "AR State"
 
 if ar_name_col not in ar_df.columns or email_col not in ar_df.columns:
     st.error("⚠️ Column names in your Excel file do not match 'AR Name' or 'Email'. Check the names above and update them in the code.")
@@ -40,10 +42,10 @@ else:
 
         results = []
         for line in transactions:
-            for ar in ar_names:
+            for ar in ar_s:
                 score = fuzz.partial_ratio(ar.lower(), line.lower())
                 if score >= 85:
-                    match_email = ar_df[ar_df[ar_name_col] == ar][email_col].values[0]
+                    match_email = ar_df[ar_df[ar__col] == ar][email_col].values[0]
                     results.append({
                         "Transaction": line.strip(),
                         "Matched AR": ar,

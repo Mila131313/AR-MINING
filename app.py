@@ -4,11 +4,10 @@ import pdfplumber
 from rapidfuzz import fuzz
 
 @st.cache_data
-def app.py:
-    return pd.read_excel("AR_DATABASE_DETAILS.xlsx")
+def load_ar_database():
+        return pd.read_excel("./AR_DATABASE_DETAILS.xlsx", engine='openpyxl')
 
-ar_df = app.py
-
+ar_df = load_ar_database()
 ar_names = ar_df["AR Name"].dropna().tolist()
 
 pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])

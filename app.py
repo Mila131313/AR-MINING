@@ -5,7 +5,7 @@ import pdfplumber
 from rapidfuzz import fuzz
 
 ar_df = pd.read_excel("AR_DATABASE_DETAILS.xlsx")
-ar_names = ar_df["Actual Column Name"].dropna().tolist(
+ar_names = ar_df["Actual Column Name"].dropna().tolist()
 
 # Load AR database directly from local file (included in repo)
 @st.cache_data

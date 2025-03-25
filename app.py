@@ -1,19 +1,16 @@
-
 import streamlit as st
 import pandas as pd
 import pdfplumber
 from rapidfuzz import fuzz
 
-ar_df = pd.read_excel("AR_DATABASE_DETAILS.xlsx")
-ar_names = ar_df["Actual Column Name"].dropna().tolist()
-
-# Load AR database directly from local file (included in repo)
+# Cached function to load AR database
 @st.cache_data
 def load_ar_database():
-    return pd.read_excel("AR DATABASE DETAILS.xlsx")
+    return pd.read_excel("AR_DATABASE_DETAILS.xlsx")
 
 ar_df = load_ar_database()
-ar_names = ar_df["Exact Column Name from Excel"].dropna().tolist()
+
+ar_names = ar_df["AR Name"].dropna().tolist()
 
 # Upload bank statement PDF
 pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])

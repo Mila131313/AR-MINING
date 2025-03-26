@@ -37,41 +37,53 @@ else:
     # PDF upload section
     pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
 
-    if pdf_file:
-        st.info("⏳ Processing PDF...")
-        transactions = extract_pdf_lines(pdf_file)
+ if pdf_file:
+    st.info("⏳ Processing PDF...")
+    transactions = extract_pdf_lines(pdf_file)
 
-        results = []
+    deposit_patterns = [
+        r'\bdeposit\b',
+        r'\bcredit\b',
+        r'atm cash deposit',
+        r'remote online deposit',
+        r'online transfer from',
+        r'fee reversal',
+        r'net setlmt',
+        r'edi paymnt',
+        r'adv credit',
+        r'wire transfer',
+        r'ach credit',
+        r'orig co name.*net setlmt',
+        r'orig co name.*edi paymnt',
+        r'orig co name.*adv credit'
+    ]
 
-        # Regex pattern to extract amounts ($1,234.56 or -$1,234.56)
-        amount_pattern = re.compile(r'(-?)\$\s?[\d,]+\.\d{2}')
+    # Patterns to detect negative amounts (either with "-" or parentheses)
+    negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
+    positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
 
-        for line in transactions:
-            amount_match = amount_pattern.search(line.replace(',', ''))
-            if amount_match:
-                is_negative = amount_match.group(1) == '-'
+    deposit_results = []
 
-                # ONLY Deposits (positive amounts)
-                if not is_negative:
-                    line_lower = line.lower()
-                    for ar in ar_names:
-                        score = fuzz.partial_ratio(ar.lower(), line_lower)
-                        if score >= 85:
-                            match_row = ar_df[ar_df[ar_name_col] == ar].iloc[0]
-                            results.append({
-                                "Deposit Transaction": line.strip(),
-                                "Matched AR": ar,
-                                "Email": match_row[ar_email_col],
-                                "Country": match_row.get(ar_country_col, ""),
-                                "State": match_row.get(ar_state_col, "")
-                            })
+    for line in transactions:
+        line_lower = line.lower()
 
-        if results:
-            result_df = pd.DataFrame(results)
-            st.success(f"✅ {len(result_df)} matches found!")
-            st.dataframe(result_df)
+        # Exclude lines with negative amounts
+        if negative_amount_pattern.search(line.replace(',', '')):
+            continue  # Skip negative transactions entirely
 
-            csv_data = result_df.to_csv(index=False).encode("utf-8")
-            st.download_button("Download Results as CSV", csv_data, "matched_ar_results.csv", "text/csv")
-        else:
-            st.warning("❌ No ARs matched in this bank statement.")
+        # Process only lines containing explicit positive amounts
+        if positive_amount_pattern.search(line.replace(',', '')):
+            is_deposit = any(re.search(pattern, line_lower) for pattern in deposit_patterns)
+
+            if is_deposit:
+                deposit_results.append({"Deposit Transaction": line.strip()})
+
+    if deposit_results:
+        deposit_df = pd.DataFrame(deposit_results).drop_duplicates()
+        st.success(f"✅ {len(deposit_df)} deposit transactions identified!")
+        st.dataframe(deposit_df)
+
+        csv_data = deposit_df.to_csv(index=False).encode("utf-8")
+        st.download_button("Download Deposit Transactions CSV", csv_data, "deposit_transactions.csv", "text/csv")
+    else:
+        st.warning("❌ No deposit transactions found in this bank statement.")

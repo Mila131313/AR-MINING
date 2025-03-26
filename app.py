@@ -39,7 +39,7 @@ else:
 
 if pdf_file:
     st.info("⏳ Processing PDF...")
-    transactions = extract_pdf_lines(pdf_file)
+    transactions = extract_pdf_lines(pdf_file)  # <-- THIS is crucial
 
     results = []
 
@@ -52,45 +52,45 @@ if pdf_file:
     negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
     positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
 
-for line in transactions:
-    line_clean = line.replace(',', '').lower()
+    for line in transactions:
+        line_clean = line.replace(',', '').lower()
 
-    if negative_amount_pattern.search(line_clean):
-        continue
+        if negative_amount_pattern.search(line_clean):
+            continue
 
-    if any(exclude_word in line_clean for exclude_word in ['minimum', 'balance', 'total', 'service fee', 'card summary', 'payment solutions', 'fee']):
-        continue
+        if any(exclude_word in line_clean for exclude_word in ['minimum', 'balance', 'total', 'service fee', 'card summary', 'payment solutions', 'fee']):
+            continue
 
-    if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_keywords):
-        best_match = None
-        highest_score = 0
-        for ar in ar_names:
-            score = fuzz.token_set_ratio(ar.lower(), line_clean)
-            if score > highest_score and score >= 60:
-                highest_score = score
-                best_match = ar
+        if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_keywords):
+            best_match = None
+            highest_score = 0
+            for ar in ar_names:
+                score = fuzz.token_set_ratio(ar.lower(), line_clean)
+                if score > highest_score and score >= 60:
+                    highest_score = score
+                    best_match = ar
 
-        if best_match:
-            match_row = ar_df[ar_df[ar_name_col] == best_match].iloc[0]
-            results.append({
-                "Deposit Transaction": line.strip(),
-                "Matched AR": best_match,
-                "Email": match_row[ar_email_col] if pd.notna(match_row[ar_email_col]) else "",
-                "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
-                "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
-            })
-        else:
-            results.append({
-                "Deposit Transaction": line.strip(),
-                "Matched AR": "NO MATCH FOUND",
-                "Email": "",
-                "Country": "",
-                "State": ""
-            })
+            if best_match:
+                match_row = ar_df[ar_df[ar_name_col] == best_match].iloc[0]
+                results.append({
+                    "Deposit Transaction": line.strip(),
+                    "Matched AR": best_match,
+                    "Email": match_row[ar_email_col] if pd.notna(match_row[ar_email_col]) else "",
+                    "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
+                    "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
+                })
+            else:
+                results.append({
+                    "Deposit Transaction": line.strip(),
+                    "Matched AR": "NO MATCH FOUND",
+                    "Email": "",
+                    "Country": "",
+                    "State": ""
+                })
 
     if results:
         result_df = pd.DataFrame(results).drop_duplicates()
-        st.success(f"✅ {len(result_df)} deposit transactions identified!")
+        st.success(f"✅ {len(result_df)} deposit transactions identified!", icon="✅")
         st.dataframe(result_df)
 
         csv_data = result_df.to_csv(index=False).encode("utf-8")

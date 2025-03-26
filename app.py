@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import pdfplumber
 from rapidfuzz import fuzz
+import re
 
 @st.cache_data
 def load_ar_database():

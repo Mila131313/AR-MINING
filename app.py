@@ -41,16 +41,29 @@ else:
         transactions = extract_pdf_lines(pdf_file)
 
         results = []
+
+        # Regex pattern to extract amounts ($1,234.56 or -$1,234.56)
+        amount_pattern = re.compile(r'(-?)\$\s?[\d,]+\.\d{2}')
+
         for line in transactions:
-            for ar in ar_names:
-                score = fuzz.partial_ratio(ar.lower(), line.lower())
-                if score >= 85:
-                    match_email = ar_df[ar_df[ar_name_col] == ar][ar_email_col].values[0]
-                    results.append({
-                        "Transaction": line.strip(),
-                        "Matched AR": ar,
-                        "Email": match_email
-                    })
+            amount_match = amount_pattern.search(line.replace(',', ''))
+            if amount_match:
+                is_negative = amount_match.group(1) == '-'
+
+                # ONLY Deposits (positive amounts)
+                if not is_negative:
+                    line_lower = line.lower()
+                    for ar in ar_names:
+                        score = fuzz.partial_ratio(ar.lower(), line_lower)
+                        if score >= 85:
+                            match_row = ar_df[ar_df[ar_name_col] == ar].iloc[0]
+                            results.append({
+                                "Deposit Transaction": line.strip(),
+                                "Matched AR": ar,
+                                "Email": match_row[ar_email_col],
+                                "Country": match_row.get(ar_country_col, ""),
+                                "State": match_row.get(ar_state_col, "")
+                            })
 
         if results:
             result_df = pd.DataFrame(results)

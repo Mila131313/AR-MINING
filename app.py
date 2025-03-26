@@ -40,6 +40,9 @@ else:
 if pdf_file:
     st.info("⏳ Processing PDF...")
     transactions = extract_pdf_lines(pdf_file)
+    
+    # Debugging: Check PDF extraction clearly first.
+    st.write("Extracted Lines from PDF:", transactions[:50]) 
 
     # Explicit deposit-related keywords from real Chase statements
     deposit_patterns = [

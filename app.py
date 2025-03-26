@@ -41,38 +41,49 @@ if pdf_file:
     st.info("⏳ Processing PDF...")
     transactions = extract_pdf_lines(pdf_file)
 
-    deposit_results = []
+    results = []
+
+    # Explicit deposit patterns (real transaction indicators only)
+    deposit_keywords = [
+        'atm cash deposit', 'remote online deposit', 'online transfer from',
+        'net setlmt', 'edi paymnt', 'adv credit', 'ach credit', 'wire transfer',
+        'doordash', 'uber', 'grubhub', 'citizens', 'united first', 'fundbox'
+    ]
+
     negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
     positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
-
-    # Simplified deposit detection
-    deposit_patterns = [
-        'atm cash deposit', 'remote online deposit', 'online transfer from', 'fee reversal',
-        'net setlmt', 'edi paymnt', 'adv credit', 'wire transfer', 'ach credit',
-        'orig co name', 'deposit'
-    ]
 
     for line in transactions:
         line_clean = line.replace(',', '').lower()
 
-        # Explicitly skip negative amounts
+        # Skip explicitly negative amounts
         if negative_amount_pattern.search(line_clean):
             continue
 
-        # Explicitly skip non-transactional informational lines
-        if any(x in line_clean for x in ['minimum', 'ending balance', 'lowest daily', 'average balance', 'monthly service fee']):
+        # Explicitly exclude informational summaries or fee descriptions
+        if any(exclude_word in line_clean for exclude_word in ['minimum', 'balance', 'total', 'service fee', 'card summary', 'chase payment solutions', 'fee']):
             continue
 
-        # Check explicitly for deposit patterns and positive amounts
-        if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_patterns):
-            deposit_results.append({"Deposit Transaction": line.strip()})
+        # Explicit positive amount and deposit keywords check
+        if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_keywords):
+            for ar in ar_names:
+                score = fuzz.partial_ratio(ar.lower(), line_clean)
+                if score >= 85:
+                    match_row = ar_df[ar_df[ar_name_col] == ar].iloc[0]
+                    results.append({
+                        "Deposit Transaction": line.strip(),
+                        "Matched AR": ar,
+                        "Email": match_row[ar_email_col],
+                        "Country": match_row.get(ar_country_col, ""),
+                        "State": match_row.get(ar_state_col, "")
+                    })
 
-    if deposit_results:
-        deposit_df = pd.DataFrame(deposit_results).drop_duplicates()
-        st.success(f"✅ {len(deposit_df)} deposit transactions identified!")
-        st.dataframe(deposit_df)
+    if results:
+        result_df = pd.DataFrame(results).drop_duplicates()
+        st.success(f"✅ {len(result_df)} deposit matches found!")
+        st.dataframe(result_df)
 
-        csv_data = deposit_df.to_csv(index=False).encode("utf-8")
-        st.download_button("Download Deposit Transactions CSV", csv_data, "deposit_transactions.csv", "text/csv")
+        csv_data = result_df.to_csv(index=False).encode("utf-8")
+        st.download_button("Download Results as CSV", csv_data, "matched_ar_deposits.csv", "text/csv")
     else:
-        st.warning("❌ No deposit transactions found in this bank statement.")
+        st.warning("❌ No AR-matched deposit transactions found in this bank statement.")

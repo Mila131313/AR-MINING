@@ -92,4 +92,10 @@ if pdf_file:
 
     if results:
         result_df = pd.DataFrame(results).drop_duplicates()
-        st.success
+        st.success(f"✅ {len(result_df)} deposit transactions identified!")
+        st.dataframe(result_df)
+
+        csv_data = result_df.to_csv(index=False).encode("utf-8")
+        st.download_button("Download Matched Deposits CSV", csv_data, "matched_ar_deposits.csv", "text/csv")
+    else:
+        st.warning("❌ No deposit transactions found in this bank statement.")

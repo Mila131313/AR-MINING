@@ -90,8 +90,7 @@ for line in transactions:
                 "State": ""
             })
 
-            else:
-                # Optional: clearly indicate no match (for debugging)
+        else:
                 results.append({
                     "Deposit Transaction": line.strip(),
                     "Matched AR": "NO MATCH FOUND",

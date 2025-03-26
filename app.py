@@ -62,23 +62,34 @@ if pdf_file:
             continue
 
         if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_keywords):
-            best_match = None
-            highest_score = 0
-            for ar in ar_names:
-                score = fuzz.token_set_ratio(ar.lower(), line_clean)
-                if score > highest_score and score >= 60:
-                    highest_score = score
-                    best_match = ar
+            matched_ars = []
 
-            if best_match:
-                match_row = ar_df[ar_df[ar_name_col] == best_match].iloc[0]
-                results.append({
-                    "Deposit Transaction": line.strip(),
-                    "Matched AR": best_match,
-                    "Email": match_row[ar_email_col] if pd.notna(match_row[ar_email_col]) else "",
-                    "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
-                    "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
-                })
+for ar in ar_names:
+    score = fuzz.token_set_ratio(ar.lower(), line_clean)
+    if score >= 60:
+        matched_ars.append((ar, score))
+
+matched_ars.sort(key=lambda x: x[1], reverse=True)
+
+if matched_ars:
+    top_ar = matched_ars[0][0]
+    match_row = ar_df[ar_df[ar_name_col] == top_ar].iloc[0]
+    results.append({
+        "Deposit Transaction": line.strip(),
+        "Matched AR": top_ar,
+        "Email": match_row[ar_email_col] if pd.notna(match_row[ar_email_col]) else "",
+        "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
+        "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
+    })
+else:
+    results.append({
+        "Deposit Transaction": line.strip(),
+        "Matched AR": "NO MATCH FOUND",
+        "Email": "",
+        "Country": "",
+        "State": ""
+    })
+
             else:
                 results.append({
                     "Deposit Transaction": line.strip(),

@@ -41,7 +41,7 @@ if pdf_file:
     st.info("⏳ Processing PDF...")
     transactions = extract_pdf_lines(pdf_file)
 
-    # Highly explicit patterns indicating deposits
+    # Explicit deposit-related keywords from real Chase statements
     deposit_patterns = [
         r'atm cash deposit',
         r'remote online deposit',
@@ -52,10 +52,14 @@ if pdf_file:
         r'adv credit',
         r'wire transfer',
         r'ach credit',
-        r'orig co name.*net setlmt',
-        r'orig co name.*edi paymnt',
-        r'orig co name.*adv credit',
-        r'\bdeposit\b',  # only explicit standalone "deposit" word
+        r'\bdeposit\b',
+        r'orig co name.*(net setlmt|edi paymnt|adv credit)',
+        r'doordash.*ccd',
+        r'uber.*ccd',
+        r'grubhub.*ccd',
+        r'citizens.*ppd',
+        r'united.*ccd',
+        r'fundbox.*ccd'
     ]
 
     negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
@@ -64,19 +68,19 @@ if pdf_file:
     deposit_results = []
 
     for line in transactions:
-        line_lower = line.lower()
+        line_clean = line.replace(',', '').lower()
 
-        # Exclude lines with negative amounts
-        if negative_amount_pattern.search(line.replace(',', '')):
-            continue  # Skip negative transactions
+        # Skip negative amounts explicitly
+        if negative_amount_pattern.search(line_clean):
+            continue
 
-        # Explicitly skip lines mentioning "minimum balance", "ending balance", or similar terms
-        if re.search(r'minimum|ending balance|lowest daily|average balance', line_lower):
-            continue  # Skip balance notices explicitly
+        # Skip balance or informational lines explicitly
+        if re.search(r'minimum|ending balance|lowest daily|average balance|service fee', line_clean):
+            continue
 
         # Process only lines containing explicit positive amounts and deposit patterns
-        if positive_amount_pattern.search(line.replace(',', '')):
-            is_deposit = any(re.search(pattern, line_lower) for pattern in deposit_patterns)
+        if positive_amount_pattern.search(line_clean):
+            is_deposit = any(re.search(pattern, line_clean) for pattern in deposit_patterns)
 
             if is_deposit:
                 deposit_results.append({"Deposit Transaction": line.strip()})

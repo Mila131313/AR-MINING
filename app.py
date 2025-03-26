@@ -36,7 +36,7 @@ else:
 
     # PDF upload section
     pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
-    
+
 if pdf_file:
     st.info("⏳ Processing PDF...")
     transactions = extract_pdf_lines(pdf_file)
@@ -55,32 +55,33 @@ if pdf_file:
     for line in transactions:
         line_clean = line.replace(',', '').lower()
 
-        # Skip negative amounts
         if negative_amount_pattern.search(line_clean):
             continue
 
-        # Explicitly exclude non-deposit informational lines
         if any(exclude_word in line_clean for exclude_word in ['minimum', 'balance', 'total', 'service fee', 'card summary', 'payment solutions', 'fee']):
             continue
 
-        # Check for positive amounts and deposit keywords explicitly
         if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_keywords):
-            matched = False  # Track if a transaction matched
+            best_match = None
+            highest_score = 0
             for ar in ar_names:
-                score = fuzz.partial_ratio(ar.lower(), line_clean)
-                if score >= 70:  # Lowered from 85 to 70 to catch minor variations
-                    match_row = ar_df[ar_df[ar_name_col] == ar].iloc[0]
-                    results.append({
-                        "Deposit Transaction": line.strip(),
-                        "Matched AR": ar,
-                        "Email": match_row[ar_email_col],
-                        "Country": match_row.get(ar_country_col, ""),
-                        "State": match_row.get(ar_state_col, "")
-                    })
-                    matched = True
+                # Improved matching using token_set_ratio
+                score = fuzz.token_set_ratio(ar.lower(), line_clean)
+                if score > highest_score and score >= 80:
+                    highest_score = score
+                    best_match = ar
 
-            # Optional debugging (comment out if not needed)
-            if not matched:
+            if best_match:
+                match_row = ar_df[ar_df[ar_name_col] == best_match].iloc[0]
+                results.append({
+                    "Deposit Transaction": line.strip(),
+                    "Matched AR": best_match,
+                    "Email": match_row[ar_email_col] if pd.notna(match_row[ar_email_col]) else "",
+                    "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
+                    "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
+                })
+            else:
+                # Optional: clearly indicate no match (for debugging)
                 results.append({
                     "Deposit Transaction": line.strip(),
                     "Matched AR": "NO MATCH FOUND",
@@ -91,10 +92,4 @@ if pdf_file:
 
     if results:
         result_df = pd.DataFrame(results).drop_duplicates()
-        st.success(f"✅ {len(result_df)} deposit transactions identified (including unmatched for debugging)!")
-        st.dataframe(result_df)
-
-        csv_data = result_df.to_csv(index=False).encode("utf-8")
-        st.download_button("Download Matched Deposits CSV", csv_data, "matched_ar_deposits.csv", "text/csv")
-    else:
-        st.warning("❌ No deposit transactions found in this bank statement.")
+        st.success

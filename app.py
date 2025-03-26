@@ -36,14 +36,13 @@ else:
 
     # PDF upload section
     pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
-
+    
 if pdf_file:
     st.info("⏳ Processing PDF...")
     transactions = extract_pdf_lines(pdf_file)
 
     results = []
 
-    # Explicit deposit patterns (real transaction indicators only)
     deposit_keywords = [
         'atm cash deposit', 'remote online deposit', 'online transfer from',
         'net setlmt', 'edi paymnt', 'adv credit', 'ach credit', 'wire transfer',
@@ -56,19 +55,20 @@ if pdf_file:
     for line in transactions:
         line_clean = line.replace(',', '').lower()
 
-        # Skip explicitly negative amounts
+        # Skip negative amounts
         if negative_amount_pattern.search(line_clean):
             continue
 
-        # Explicitly exclude informational summaries or fee descriptions
-        if any(exclude_word in line_clean for exclude_word in ['minimum', 'balance', 'total', 'service fee', 'card summary', 'chase payment solutions', 'fee']):
+        # Explicitly exclude non-deposit informational lines
+        if any(exclude_word in line_clean for exclude_word in ['minimum', 'balance', 'total', 'service fee', 'card summary', 'payment solutions', 'fee']):
             continue
 
-        # Explicit positive amount and deposit keywords check
+        # Check for positive amounts and deposit keywords explicitly
         if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_keywords):
+            matched = False  # Track if a transaction matched
             for ar in ar_names:
                 score = fuzz.partial_ratio(ar.lower(), line_clean)
-                if score >= 85:
+                if score >= 70:  # Lowered from 85 to 70 to catch minor variations
                     match_row = ar_df[ar_df[ar_name_col] == ar].iloc[0]
                     results.append({
                         "Deposit Transaction": line.strip(),
@@ -77,13 +77,24 @@ if pdf_file:
                         "Country": match_row.get(ar_country_col, ""),
                         "State": match_row.get(ar_state_col, "")
                     })
+                    matched = True
+
+            # Optional debugging (comment out if not needed)
+            if not matched:
+                results.append({
+                    "Deposit Transaction": line.strip(),
+                    "Matched AR": "NO MATCH FOUND",
+                    "Email": "",
+                    "Country": "",
+                    "State": ""
+                })
 
     if results:
         result_df = pd.DataFrame(results).drop_duplicates()
-        st.success(f"✅ {len(result_df)} deposit matches found!")
+        st.success(f"✅ {len(result_df)} deposit transactions identified (including unmatched for debugging)!")
         st.dataframe(result_df)
 
         csv_data = result_df.to_csv(index=False).encode("utf-8")
-        st.download_button("Download Results as CSV", csv_data, "matched_ar_deposits.csv", "text/csv")
+        st.download_button("Download Matched Deposits CSV", csv_data, "matched_ar_deposits.csv", "text/csv")
     else:
-        st.warning("❌ No AR-matched deposit transactions found in this bank statement.")
+        st.warning("❌ No deposit transactions found in this bank statement.")

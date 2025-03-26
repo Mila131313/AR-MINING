@@ -53,33 +53,43 @@ if pdf_file:
     positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
 
     for line in transactions:
-        line_clean = line.replace(',', '').lower()
+    line_clean = line.replace(',', '').lower()
 
-        if negative_amount_pattern.search(line_clean):
-            continue
+    if negative_amount_pattern.search(line_clean):
+        continue
 
-        if any(exclude_word in line_clean for exclude_word in ['minimum', 'balance', 'total', 'service fee', 'card summary', 'payment solutions', 'fee']):
-            continue
+    if any(exclude_word in line_clean for exclude_word in ['minimum', 'balance', 'total', 'service fee', 'card summary', 'payment solutions', 'fee']):
+        continue
 
-        if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_keywords):
-            best_match = None
-            highest_score = 0
-            for ar in ar_names:
-                # Improved matching using token_set_ratio
-                score = fuzz.token_set_ratio(ar.lower(), line_clean)
-                if score > highest_score and score >= 80:
-                    highest_score = score
-                    best_match = ar
+    if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_keywords):
+        best_match = None
+        highest_score = 0
+        for ar in ar_names:
+            # Further lowered matching threshold
+            score = fuzz.token_set_ratio(ar.lower(), line_clean)
+            if score > highest_score and score >= 60:  # Lowered clearly to 60
+                highest_score = score
+                best_match = ar
 
-            if best_match:
-                match_row = ar_df[ar_df[ar_name_col] == best_match].iloc[0]
-                results.append({
-                    "Deposit Transaction": line.strip(),
-                    "Matched AR": best_match,
-                    "Email": match_row[ar_email_col] if pd.notna(match_row[ar_email_col]) else "",
-                    "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
-                    "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
-                })
+        if best_match:
+            match_row = ar_df[ar_df[ar_name_col] == best_match].iloc[0]
+            results.append({
+                "Deposit Transaction": line.strip(),
+                "Matched AR": best_match,
+                "Email": match_row[ar_email_col] if pd.notna(match_row[ar_email_col]) else "",
+                "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
+                "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
+            })
+            
+        else:
+            results.append({
+                "Deposit Transaction": line.strip(),
+                "Matched AR": "NO MATCH FOUND",
+                "Email": "",
+                "Country": "",
+                "State": ""
+            })
+
             else:
                 # Optional: clearly indicate no match (for debugging)
                 results.append({

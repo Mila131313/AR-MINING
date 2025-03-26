@@ -65,9 +65,8 @@ for line in transactions:
         best_match = None
         highest_score = 0
         for ar in ar_names:
-            # Further lowered matching threshold
             score = fuzz.token_set_ratio(ar.lower(), line_clean)
-            if score > highest_score and score >= 60:  # Lowered clearly to 60
+            if score > highest_score and score >= 60:
                 highest_score = score
                 best_match = ar
 
@@ -80,7 +79,6 @@ for line in transactions:
                 "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
                 "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
             })
-            
         else:
             results.append({
                 "Deposit Transaction": line.strip(),
@@ -89,15 +87,6 @@ for line in transactions:
                 "Country": "",
                 "State": ""
             })
-
-        else:
-                results.append({
-                    "Deposit Transaction": line.strip(),
-                    "Matched AR": "NO MATCH FOUND",
-                    "Email": "",
-                    "Country": "",
-                    "State": ""
-                })
 
     if results:
         result_df = pd.DataFrame(results).drop_duplicates()

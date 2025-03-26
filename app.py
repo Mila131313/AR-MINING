@@ -90,14 +90,14 @@ else:
         "State": ""
     })
 
-            else:
-                results.append({
-                    "Deposit Transaction": line.strip(),
-                    "Matched AR": "NO MATCH FOUND",
-                    "Email": "",
-                    "Country": "",
-                    "State": ""
-                })
+else:
+ results.append({
+        "Deposit Transaction": line.strip(),
+        "Matched AR": "NO MATCH FOUND",
+        "Email": "",
+        "Country": "",
+        "State": ""
+  })
 
     if results:
         result_df = pd.DataFrame(results).drop_duplicates()

@@ -52,7 +52,7 @@ if pdf_file:
     negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
     positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
 
-    for line in transactions:
+for line in transactions:
     line_clean = line.replace(',', '').lower()
 
     if negative_amount_pattern.search(line_clean):

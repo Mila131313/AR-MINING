@@ -37,13 +37,12 @@ else:
     # PDF upload section
     pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
 
- if pdf_file:
+if pdf_file:
     st.info("⏳ Processing PDF...")
     transactions = extract_pdf_lines(pdf_file)
 
+    # Highly explicit patterns indicating deposits
     deposit_patterns = [
-        r'\bdeposit\b',
-        r'\bcredit\b',
         r'atm cash deposit',
         r'remote online deposit',
         r'online transfer from',
@@ -55,10 +54,10 @@ else:
         r'ach credit',
         r'orig co name.*net setlmt',
         r'orig co name.*edi paymnt',
-        r'orig co name.*adv credit'
+        r'orig co name.*adv credit',
+        r'\bdeposit\b',  # only explicit standalone "deposit" word
     ]
 
-    # Patterns to detect negative amounts (either with "-" or parentheses)
     negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
     positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
 
@@ -69,9 +68,13 @@ else:
 
         # Exclude lines with negative amounts
         if negative_amount_pattern.search(line.replace(',', '')):
-            continue  # Skip negative transactions entirely
+            continue  # Skip negative transactions
 
-        # Process only lines containing explicit positive amounts
+        # Explicitly skip lines mentioning "minimum balance", "ending balance", or similar terms
+        if re.search(r'minimum|ending balance|lowest daily|average balance', line_lower):
+            continue  # Skip balance notices explicitly
+
+        # Process only lines containing explicit positive amounts and deposit patterns
         if positive_amount_pattern.search(line.replace(',', '')):
             is_deposit = any(re.search(pattern, line_lower) for pattern in deposit_patterns)
 

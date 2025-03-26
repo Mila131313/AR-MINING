@@ -40,53 +40,32 @@ else:
 if pdf_file:
     st.info("⏳ Processing PDF...")
     transactions = extract_pdf_lines(pdf_file)
-    
-    # Debugging: Check PDF extraction clearly first.
-    st.write("Extracted Lines from PDF:", transactions[:50]) 
 
-    # Explicit deposit-related keywords from real Chase statements
-    deposit_patterns = [
-        r'atm cash deposit',
-        r'remote online deposit',
-        r'online transfer from',
-        r'fee reversal',
-        r'net setlmt',
-        r'edi paymnt',
-        r'adv credit',
-        r'wire transfer',
-        r'ach credit',
-        r'\bdeposit\b',
-        r'orig co name.*(net setlmt|edi paymnt|adv credit)',
-        r'doordash.*ccd',
-        r'uber.*ccd',
-        r'grubhub.*ccd',
-        r'citizens.*ppd',
-        r'united.*ccd',
-        r'fundbox.*ccd'
-    ]
-
+    deposit_results = []
     negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
     positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
 
-    deposit_results = []
+    # Simplified deposit detection
+    deposit_patterns = [
+        'atm cash deposit', 'remote online deposit', 'online transfer from', 'fee reversal',
+        'net setlmt', 'edi paymnt', 'adv credit', 'wire transfer', 'ach credit',
+        'orig co name', 'deposit'
+    ]
 
     for line in transactions:
         line_clean = line.replace(',', '').lower()
 
-        # Skip negative amounts explicitly
+        # Explicitly skip negative amounts
         if negative_amount_pattern.search(line_clean):
             continue
 
-        # Skip balance or informational lines explicitly
-        if re.search(r'minimum|ending balance|lowest daily|average balance|service fee', line_clean):
+        # Explicitly skip non-transactional informational lines
+        if any(x in line_clean for x in ['minimum', 'ending balance', 'lowest daily', 'average balance', 'monthly service fee']):
             continue
 
-        # Process only lines containing explicit positive amounts and deposit patterns
-        if positive_amount_pattern.search(line_clean):
-            is_deposit = any(re.search(pattern, line_clean) for pattern in deposit_patterns)
-
-            if is_deposit:
-                deposit_results.append({"Deposit Transaction": line.strip()})
+        # Check explicitly for deposit patterns and positive amounts
+        if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_patterns):
+            deposit_results.append({"Deposit Transaction": line.strip()})
 
     if deposit_results:
         deposit_df = pd.DataFrame(deposit_results).drop_duplicates()

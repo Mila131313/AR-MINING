@@ -88,13 +88,9 @@ else:
                         "Country": "",
                         "State": ""
                     })
-
-if results:
+        if results:
     result_df = pd.DataFrame(results).drop_duplicates()
-
-    # ✅ Add optional checkbox to hide unmatched
     show_unmatched = st.checkbox("Show unmatched deposit lines", value=False)
-
     if not show_unmatched:
         result_df = result_df[result_df["Matched AR"] != "NO MATCH FOUND"]
 

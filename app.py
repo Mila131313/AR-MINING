@@ -34,13 +34,15 @@ if ar_name_col not in ar_df.columns or ar_email_col not in ar_df.columns:
 else:
     ar_names = ar_df[ar_name_col].dropna().tolist()
 
-    # PDF upload section
+    # PDF upload section inside the ELSE block
     pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
 
-if pdf_file:
-    st.info("⏳ Processing PDF...")
-    transactions = extract_pdf_lines(pdf_file)
+    if pdf_file:
+        st.info("⏳ Processing PDF...")
+        transactions = extract_pdf_lines(pdf_file)
 
+        # Your deposit matching logic continues here...
+    
     results = []
 
     deposit_keywords = [

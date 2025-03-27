@@ -17,10 +17,25 @@ def extract_pdf_lines(uploaded_pdf):
                 lines.extend(text.split("\n"))
     return lines
 
+# Bank-specific deposit keywords
+BANK_KEYWORDS = {
+    "chase": [
+        "ach credit", "zelle from", "remote online deposit"
+    ],
+    "boa": [
+        "online transfer from", "direct deposit", "deposit"
+    ],
+    "wells": [
+        "mobile deposit", "ach credit", "cash deposit"
+    ],
+    "default": [
+        "wire transfer", "atm cash deposit", "adv credit", "net setlmt", "edi paymnt",
+        "doordash", "uber", "grubhub", "citizens", "united first", "fundbox"
+    ]
+}
+
 # Load AR database
 ar_df = load_ar_database()
-
-# Display exact columns to verify correct names:
 st.write("Excel Column Names:", ar_df.columns.tolist())
 
 ar_name_col = "AR Name"
@@ -33,20 +48,16 @@ if ar_name_col not in ar_df.columns or ar_email_col not in ar_df.columns:
 else:
     ar_names = ar_df[ar_name_col].dropna().tolist()
 
-    # ✅ PDF upload inside the valid Excel block
     pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
 
     if pdf_file:
         st.info("⏳ Processing PDF...")
         transactions = extract_pdf_lines(pdf_file)
-
         results = []
 
-        deposit_keywords = [
-            'atm cash deposit', 'remote online deposit', 'online transfer from',
-            'net setlmt', 'edi paymnt', 'adv credit', 'ach credit', 'wire transfer',
-            'doordash', 'uber', 'grubhub', 'citizens', 'united first', 'fundbox'
-        ]
+        # Optionally allow user to select bank for better keyword matching
+        bank_choice = st.selectbox("Select Bank", ["chase", "boa", "wells", "default"])
+        deposit_keywords = BANK_KEYWORDS.get(bank_choice, BANK_KEYWORDS["default"])
 
         negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
         positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
@@ -71,11 +82,12 @@ else:
                 matched_ars.sort(key=lambda x: x[1], reverse=True)
 
                 if matched_ars:
-                    top_ar = matched_ars[0][0]
+                    top_ar, confidence = matched_ars[0]
                     match_row = ar_df[ar_df[ar_name_col] == top_ar].iloc[0]
                     results.append({
                         "Deposit Transaction": line.strip(),
                         "Matched AR": top_ar,
+                        "Match Confidence (%)": confidence,
                         "Email": match_row[ar_email_col] if pd.notna(match_row[ar_email_col]) else "",
                         "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
                         "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
@@ -84,12 +96,12 @@ else:
                     results.append({
                         "Deposit Transaction": line.strip(),
                         "Matched AR": "NO MATCH FOUND",
+                        "Match Confidence (%)": 0,
                         "Email": "",
                         "Country": "",
                         "State": ""
                     })
 
-        # ✅ Display results and download option
         if results:
             result_df = pd.DataFrame(results).drop_duplicates()
             show_unmatched = st.checkbox("Show unmatched deposit lines", value=False)

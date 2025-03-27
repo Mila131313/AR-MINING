@@ -23,8 +23,6 @@ st.write("Excel Column Names:", ar_df.columns.tolist())
 
 ar_name_col = "AR Name"
 ar_email_col = "AR Email"
-ar_country_col = "AR Country"
-ar_state_col = "AR State"
 
 if ar_name_col not in ar_df.columns or ar_email_col not in ar_df.columns:
     st.error("⚠️ Column names in your Excel file do not match. Check the names above and update them in the code.")
@@ -67,9 +65,8 @@ else:
                         "Deposit Transaction": line.strip(),
                         "Matched AR": top_ar,
                         "Match Confidence (%)": confidence,
-                        "Email": match_row[ar_email_col] if pd.notna(match_row[ar_email_col]) else "",
-                        "Country": match_row[ar_country_col] if pd.notna(match_row[ar_country_col]) else "",
-                        "State": match_row[ar_state_col] if pd.notna(match_row[ar_state_col]) else ""
+                        "Email": match_row.get(ar_email_col, ""),   
+
                     })
                 else:
                     results.append({
@@ -77,8 +74,6 @@ else:
                         "Matched AR": "NO MATCH FOUND",
                         "Match Confidence (%)": 0,
                         "Email": "",
-                        "Country": "",
-                        "State": ""
                     })
 
         if results:

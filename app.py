@@ -35,7 +35,6 @@ else:
         transactions = extract_pdf_lines(pdf_file)
         results = []
 
-        # Only pattern checks
         negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
         positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
 
@@ -58,22 +57,22 @@ else:
 
                 matched_ars.sort(key=lambda x: x[1], reverse=True)
 
-             if matched_ars:
-                top_ar, confidence = matched_ars[0]
-                match_row = ar_df[ar_df[ar_name_col] == top_ar].iloc[0]
-                results.append({
-                    "Deposit Transaction": line.strip(),
-                    "Matched AR": top_ar,
-                    "Match Confidence (%)": confidence,
-                    "Email": match_row.get(ar_email_col, "")
-                })
-            else:
-                results.append({
-                    "Deposit Transaction": line.strip(),
-                    "Matched AR": "NO MATCH FOUND",
-                    "Match Confidence (%)": 0,
-                    "Email": ""
-                })
+                if matched_ars:
+                    top_ar, confidence = matched_ars[0]
+                    match_row = ar_df[ar_df[ar_name_col] == top_ar].iloc[0]
+                    results.append({
+                        "Deposit Transaction": line.strip(),
+                        "Matched AR": top_ar,
+                        "Match Confidence (%)": confidence,
+                        "Email": match_row.get(ar_email_col, "")
+                    })
+                else:
+                    results.append({
+                        "Deposit Transaction": line.strip(),
+                        "Matched AR": "NO MATCH FOUND",
+                        "Match Confidence (%)": 0,
+                        "Email": ""
+                    })
 
         if results:
             result_df = pd.DataFrame(results).drop_duplicates()

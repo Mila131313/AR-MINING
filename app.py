@@ -30,7 +30,6 @@ if ar_name_col not in ar_df.columns or ar_email_col not in ar_df.columns:
     st.error("⚠️ Column names in your Excel file do not match. Check the names above and update them in the code.")
 else:
     ar_names = ar_df[ar_name_col].dropna().tolist()
-
     pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
 
     if pdf_file:
@@ -38,6 +37,7 @@ else:
         transactions = extract_pdf_lines(pdf_file)
         results = []
 
+        # Only pattern checks
         negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
         positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
 

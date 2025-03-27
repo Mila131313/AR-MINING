@@ -37,7 +37,7 @@ else:
     # PDF upload section inside the ELSE block
     pdf_file = st.file_uploader("Upload Bank Statement PDF", type=["pdf"])
 
-    if 'pdf_file' in locals() and pdf_file:
+if 'pdf_file' in locals() and pdf_file:
     # safe to use pdf_file here
 
     if pdf_file:

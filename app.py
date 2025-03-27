@@ -38,10 +38,6 @@ else:
         transactions = extract_pdf_lines(pdf_file)
         results = []
 
-        # Optionally allow user to select bank for better keyword matching
-        bank_choice = st.selectbox("Select Bank", ["chase", "boa", "wells", "default"])
-        deposit_keywords = BANK_KEYWORDS.get(bank_choice, BANK_KEYWORDS["default"])
-
         negative_amount_pattern = re.compile(r'(-\$\s?[\d,]+\.\d{2}|\(\$\s?[\d,]+\.\d{2}\))')
         positive_amount_pattern = re.compile(r'\$\s?[\d,]+\.\d{2}')
 

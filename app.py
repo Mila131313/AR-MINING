@@ -69,12 +69,12 @@ else:
 
                     })
                 else:
-                    results.append({
-                        "Deposit Transaction": line.strip(),
-                        "Matched AR": "NO MATCH FOUND",
-                        "Match Confidence (%)": 0,
-                        "Email": "",
-                    })
+               results.append({
+                "Deposit Transaction": line.strip(),
+                "Matched AR": top_ar,
+                "Match Confidence (%)": confidence,
+                "Email": match_row.get(ar_email_col, "")
+               })
 
         if results:
             result_df = pd.DataFrame(results).drop_duplicates()

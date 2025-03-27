@@ -23,10 +23,10 @@ ar_df = load_ar_database()
 # Display exact columns to verify correct names:
 st.write("Excel Column Names:", ar_df.columns.tolist())
 
-ar_name_col = "AR NAME"
-ar_email_col = "AR EMAILS"
-ar_country_col = "country"
-ar_state_col = "STATE"
+ar_name_col = "AR Name"
+ar_email_col = "AR Email"
+ar_country_col = "AR Country"
+ar_state_col = "AR State"
 
 if ar_name_col not in ar_df.columns or ar_email_col not in ar_df.columns:
     st.error("⚠️ Column names in your Excel file do not match. Check the names above and update them in the code.")

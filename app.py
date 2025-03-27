@@ -17,23 +17,6 @@ def extract_pdf_lines(uploaded_pdf):
                 lines.extend(text.split("\n"))
     return lines
 
-# Bank-specific deposit keywords
-BANK_KEYWORDS = {
-    "chase": [
-        "ach credit", "zelle from", "remote online deposit"
-    ],
-    "boa": [
-        "online transfer from", "direct deposit", "deposit"
-    ],
-    "wells": [
-        "mobile deposit", "ach credit", "cash deposit"
-    ],
-    "default": [
-        "wire transfer", "atm cash deposit", "adv credit", "net setlmt", "edi paymnt",
-        "doordash", "uber", "grubhub", "citizens", "united first", "fundbox"
-    ]
-}
-
 # Load AR database
 ar_df = load_ar_database()
 st.write("Excel Column Names:", ar_df.columns.tolist())

@@ -89,12 +89,19 @@ else:
                         "State": ""
                     })
 
-        if results:
-            result_df = pd.DataFrame(results).drop_duplicates()
-            st.success(f"✅ {len(result_df)} deposit transactions identified!", icon="✅")
-            st.dataframe(result_df)
+if results:
+    result_df = pd.DataFrame(results).drop_duplicates()
 
-            csv_data = result_df.to_csv(index=False).encode("utf-8")
-            st.download_button("Download Matched Deposits CSV", csv_data, "matched_ar_deposits.csv", "text/csv")
-        else:
-            st.warning("❌ No deposit transactions found in this bank statement.")
+    # ✅ Add optional checkbox to hide unmatched
+    show_unmatched = st.checkbox("Show unmatched deposit lines", value=False)
+
+    if not show_unmatched:
+        result_df = result_df[result_df["Matched AR"] != "NO MATCH FOUND"]
+
+    st.success(f"✅ {len(result_df)} matched deposit transactions identified!", icon="✅")
+    st.dataframe(result_df)
+
+    csv_data = result_df.to_csv(index=False).encode("utf-8")
+    st.download_button("Download Matched Deposits CSV", csv_data, "matched_ar_deposits.csv", "text/csv")
+else:
+    st.warning("❌ No deposit transactions found in this bank statement.")

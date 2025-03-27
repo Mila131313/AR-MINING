@@ -1,4 +1,4 @@
-import streamlit as st
+    import streamlit as st
 import pandas as pd
 import pdfplumber
 from rapidfuzz import fuzz
@@ -70,11 +70,11 @@ else:
                     })
                 else:
                results.append({
-                "Deposit Transaction": line.strip(),
-                "Matched AR": top_ar,
-                "Match Confidence (%)": confidence,
-                "Email": match_row.get(ar_email_col, "")
-               })
+                    "Deposit Transaction": line.strip(),
+                    "Matched AR": top_ar,
+                    "Match Confidence (%)": confidence,
+                    "Email": match_row.get(ar_email_col, "")
+                })
 
         if results:
             result_df = pd.DataFrame(results).drop_duplicates()

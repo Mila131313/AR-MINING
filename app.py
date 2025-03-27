@@ -71,12 +71,12 @@ else:
             if any(exclude_word in line_clean for exclude_word in ['minimum', 'balance', 'total', 'service fee', 'card summary', 'payment solutions', 'fee']):
                 continue
 
-            if positive_amount_pattern.search(line_clean) and any(keyword in line_clean for keyword in deposit_keywords):
+            if positive_amount_pattern.search(line_clean):
                 matched_ars = []
 
                 for ar in ar_names:
                     score = fuzz.token_set_ratio(ar.lower(), line_clean)
-                    if score >= 60:
+                    if score >= 50:
                         matched_ars.append((ar, score))
 
                 matched_ars.sort(key=lambda x: x[1], reverse=True)
